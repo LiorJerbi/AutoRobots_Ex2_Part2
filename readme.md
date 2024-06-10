@@ -82,3 +82,11 @@ this is an example on the 'challengeB.mp4' file, if more then 1 marker found in 
 ![alt text](https://i.imgur.com/Ne8xM8T.jpeg)
 ### Performance:
 The code is designed to run in real-time, processing each frame in less than 30 milliseconds on a standard computer.
+
+## Contributors
+
+- [Lior Jerbi](https://github.com/LiorJerbi) - 314899493
+- [Yael Rosen](https://github.com/yaelrosen77) - 209498211
+- [Tomer Klugman](https://github.com/tomerklugman) - 312723612
+- [Hadas Evers](https://github.com/hadasevers) - 206398984
+
