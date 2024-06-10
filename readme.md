@@ -1,4 +1,4 @@
-# QR Code Detection in Video
+# Aruco QR Code Detection in Video
 
 This project focuses on detecting aruco QR codes in a video, calculating their distance and orientation relative to the camera, and saving the results in a CSV file. Additionally, the detected QR codes are annotated in an output video file.
 
