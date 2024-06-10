@@ -38,7 +38,7 @@ def detect_aruco_markers(video_file):
                         detected_ids.add(marker_id)
 
         aruco_count = len(frame_markers)
-        print(f"Total ArUco markers detected in frame {frame_count}: {aruco_count}")
+        print(f"Total aruco markers detected in frame {frame_count}: {aruco_count}")
         detected_markers.append(frame_markers)
         aruco_count_per_frame.append(aruco_count)
         frame_count += 1

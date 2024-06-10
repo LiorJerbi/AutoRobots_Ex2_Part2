@@ -54,9 +54,20 @@ The main steps of the algorithm are as follows:
 ```
 3. Run the program:
 ```bash
-    python3 main.py
+    python main.py
 ```
-
+4. when running the program prints will be shown of how many aruco codes were found in each frame
+```bash
+Total aruco markers detected in frame 465: 2
+Total aruco markers detected in frame 466: 2
+Total aruco markers detected in frame 467: 3
+Total aruco markers detected in frame 468: 2
+Total aruco markers detected in frame 469: 1
+Total aruco markers detected in frame 470: 1
+Total aruco markers detected in frame 471: 2
+Total aruco markers detected in frame 472: 0
+Total aruco markers detected in frame 473: 0
+```
 ### Output Formats
 
 #### CSV:
