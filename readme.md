@@ -1,17 +1,17 @@
 # QR Code Detection in Video
 
-This project focuses on detecting QR codes in a video, calculating their distance and orientation relative to the camera, and saving the results in a CSV file. Additionally, the detected QR codes are annotated in an output video file.
+This project focuses on detecting aruco QR codes in a video, calculating their distance and orientation relative to the camera, and saving the results in a CSV file. Additionally, the detected QR codes are annotated in an output video file.
 
 ## Algorithm Explanation
 
 The main steps of the algorithm are as follows:
 
 1. **Video Capture**:
-   - Open the video file using OpenCV's `VideoCapture`.
+   - Open the video file using OpenCV's VideoCapture.
 
 2. **ArUco Marker Detection**:
-   - Use OpenCV's `aruco` module to detect QR codes in each frame.
-   - The `aruco` module provides functions to detect markers, estimate their positions, and draw the detected markers on the frame.
+   - Use OpenCV's aruco module to detect QR codes in each frame.
+   - The aruco module provides functions to detect markers, estimate their positions, and draw the detected markers on the frame.
 
 3. **Distance Calculation**:
    - Calculate the distance of the QR code from the camera based on the size of the detected QR code.
@@ -28,7 +28,7 @@ The main steps of the algorithm are as follows:
    - Annotate each frame with the detected QR codes and their IDs.
    - Save the annotated frames to an output video file.
 
-## How to Run the Program
+## How to Run
 
 ### Prerequisites
 
@@ -62,6 +62,7 @@ The main steps of the algorithm are as follows:
 #### CSV:
 - Columns: Frame ID, QR id, QR 2D coordinates (left-up, right-up, right-down, left-down), QR 3D (distance, yaw, pitch, roll)
 
+this is an example on the 'challengeB.mp4' file, if more then 1 marker found in a frame, another line of frame with differnt marker id will be represented.
 ![alt text](https://i.imgur.com/6sBRvjA.jpeg)
 
 #### Video:
