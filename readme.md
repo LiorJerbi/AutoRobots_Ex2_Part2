@@ -62,9 +62,11 @@ The main steps of the algorithm are as follows:
 #### CSV:
 - Columns: Frame ID, QR id, QR 2D coordinates (left-up, right-up, right-down, left-down), QR 3D (distance, yaw, pitch, roll)
 
+![alt text](https://i.imgur.com/6sBRvjA.jpeg)
 
 #### Video:
 - Annotated with detected QR codes in a green rectangular frame with their IDs.
-
+![alt text](https://i.imgur.com/1MgWvRb.jpeg)
+![alt text](https://i.imgur.com/Ne8xM8T.jpeg)
 ### Performance:
 The code is designed to run in real-time, processing each frame in less than 30 milliseconds on a standard computer.
