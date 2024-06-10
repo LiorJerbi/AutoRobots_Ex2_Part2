@@ -9,7 +9,7 @@ The main steps of the algorithm are as follows:
 1. **Video Capture**:
    - Open the video file using OpenCV's VideoCapture.
 
-2. **ArUco Marker Detection**:
+2. **Aruco Marker Detection**:
    - Use OpenCV's aruco module to detect QR codes in each frame.
    - The aruco module provides functions to detect markers, estimate their positions, and draw the detected markers on the frame.
 
@@ -73,7 +73,7 @@ Total aruco markers detected in frame 473: 0
 #### CSV:
 - Columns: Frame ID, QR id, QR 2D coordinates (left-up, right-up, right-down, left-down), QR 3D (distance, yaw, pitch, roll)
 
-this is an example on the 'challengeB.mp4' file, if more then 1 marker found in a frame, another line of frame with differnt marker id will be represented.
+this is an example on the 'challengeB.mp4' file, if more then 1 marker found in a frame, another line of frame with differnt marker id will be represented. only frames with markers found will be shown in the csv file.
 ![alt text](https://i.imgur.com/6sBRvjA.jpeg)
 
 #### Video:
