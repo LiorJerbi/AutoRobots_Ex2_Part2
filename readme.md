@@ -33,6 +33,7 @@ The main steps of the algorithm are as follows:
 ### Prerequisites
 
 - Python 3.x
+- OpenCV library
 - OpenCV Contrib library
 
 ### Installation
@@ -40,7 +41,7 @@ The main steps of the algorithm are as follows:
 1. Clone the repository or download the code.
 2. Install the required Python packages:
    ```bash
-   pip install opencv-contrib-python
+   pip install opencv-python opencv-contrib-python numpy
    ```
 
 ### Running the Program
