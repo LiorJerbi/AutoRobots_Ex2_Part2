@@ -2,6 +2,12 @@ import cv2
 import numpy as np
 import csv
 
+# Camera calibration parameters for the Tello camera
+camera_matrix = np.array([[920.8, 0, 620.5],
+                          [0, 920.8, 360.5],
+                          [0, 0, 1]])
+dist_coeffs = np.array([0.115, -0.108, 0, 0, 0])  # Example distortion coefficients
+
 def detect_aruco_markers(video_file):
     cap = cv2.VideoCapture(video_file)
     if not cap.isOpened():
@@ -38,7 +44,7 @@ def detect_aruco_markers(video_file):
                         detected_ids.add(marker_id)
 
         aruco_count = len(frame_markers)
-        print(f"Total ArUco markers detected in frame {frame_count}: {aruco_count}")
+        print(f"Total aruco markers detected in frame {frame_count}: {aruco_count}")
         detected_markers.append(frame_markers)
         aruco_count_per_frame.append(aruco_count)
         frame_count += 1
@@ -123,7 +129,6 @@ def annotate_video(video_file, output_video_file, detected_markers):
     cap.release()
     out.release()
 
-
 def main():
     video_file = 'challengeB.mp4'
     output_file = 'detection_status.csv'
@@ -143,7 +148,6 @@ def main():
         print("Annotated video saved to", output_video_file)
     else:
         print("No ArUco markers detected in the video")
-
 
 if __name__ == "__main__":
     main()
