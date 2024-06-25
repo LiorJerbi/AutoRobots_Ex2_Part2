@@ -19,7 +19,7 @@ def detect_aruco_markers(video_file):
         print("Error: Couldn't open video file")
         return None, None
 
-    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
+    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_1000)
 
     detected_markers = []
     aruco_count_per_frame = []
@@ -162,7 +162,7 @@ def give_directions(csv_file, target_frame):
         print("Error: Couldn't open live video.")
         return
 
-    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
+    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_1000)
     aruco_params = cv2.aruco.DetectorParameters()
 
     last_direction = None

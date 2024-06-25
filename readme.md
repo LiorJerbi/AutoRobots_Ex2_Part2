@@ -1,85 +1,32 @@
-# Aruco QR Code Detection in Video
+# Aruco QR Code Detection in Video & Live video directions 
 
-This project focuses on detecting aruco QR codes in a video, calculating their distance and orientation relative to the camera, and saving the results in a CSV file. Additionally, the detected QR codes are annotated in an output video file.
+- You can find the 1st part of the assignment and explanation about it in this link: https://github.com/tomerklugman/AutoRobots_Ex2
+- In this part of the exercise we focus on live directions from pre annotated video we explain in the 1st part
+- This program input is a pre-recorded video of catching QR codes in a space, and it will provide navigation directions for a live video in the same space of the previous video. 
 
-## Algorithm Explanation
+## Navigate Using Live Feed
+The script gives navigation directions based on a live video feed and the data from the CSV file.
+- When running the program it will run the 1st part on a given video, and then it will ask for a specific frame number that include QR code from the live video (exist in the outputted CSV file).
+- Then it will open your computer camera and will direct you toward the specific frame you inputted using the data (yaw/distance/roll) from the CSV file.
+- After the target frame is given and directed you toward it, the program will run on the next frames in the CSV file one by one and will give you navigate direction to it using the yaw/distance/roll from the csv file. 
 
-The main steps of the algorithm are as follows:
-
-1. **Video Capture**:
-   - Open the video file using OpenCV's VideoCapture.
-
-2. **Aruco Marker Detection**:
-   - Use OpenCV's aruco module to detect QR codes in each frame.
-   - The aruco module provides functions to detect markers, estimate their positions, and draw the detected markers on the frame.
-
-3. **Distance Calculation**:
-   - Calculate the distance of the QR code from the camera based on the size of the detected QR code.
-   - A simplified method is used here, which should be calibrated with actual measurements for more accurate results.
-
-4. **Orientation Calculation**:
-   - Calculate the yaw, pitch, and roll of the QR code based on its corners.
-   - These values represent the rotation of the QR code around the camera's coordinate axes.
-
-5. **Save Results to CSV**:
-   - Save the frame number, QR code ID, 2D coordinates of the QR code corners, distance, yaw, pitch, and roll to a CSV file.
-
-6. **Annotate and Save Video**:
-   - Annotate each frame with the detected QR codes and their IDs.
-   - Save the annotated frames to an output video file.
-
-## How to Run
-
-### Prerequisites
-
-- Python 3.x
-- OpenCV library
-- OpenCV Contrib library
-
-### Installation
-
-1. Clone the repository or download the code.
-2. Install the required Python packages:
-   ```bash
-   pip install opencv-python opencv-contrib-python numpy
-   ```
-
-### Running the Program
-1. Place your input video file in the same directory as the code or provide the correct path to the video file.
-- If you want to test the program on another video, in line 128 in main.py change the variable name to the video name.
+## Usage
+- In line number 292 in the main.py file you can enter the desired video to work on
 ```bash
-    video_file = 'challengeB.mp4'
+video_file = 'target_vid2.mp4'
 ```
-3. Run the program:
+
+- You can modify the size of the aruco marker according to you're recording in lines 22,165
 ```bash
-    python main.py
+aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
 ```
-4. when running the program prints will be shown of how many aruco codes were found in each frame
-```bash
-Total aruco markers detected in frame 465: 2
-Total aruco markers detected in frame 466: 2
-Total aruco markers detected in frame 467: 3
-Total aruco markers detected in frame 468: 2
-Total aruco markers detected in frame 469: 1
-Total aruco markers detected in frame 470: 1
-Total aruco markers detected in frame 471: 2
-Total aruco markers detected in frame 472: 0
-Total aruco markers detected in frame 473: 0
-```
-### Output Formats
+here we used 4X4_100.
 
-#### CSV:
-- Columns: Frame ID, QR id, QR 2D coordinates (left-up, right-up, right-down, left-down), QR 3D (distance, yaw, pitch, roll)
+### Direction Example:
+![alt text](https://i.imgur.com/7a8yj8O.png)
 
-this is an example on the 'challengeB.mp4' file, if more then 1 marker found in a frame, another line of frame with differnt marker id will be represented. only frames with markers found will be shown in the csv file.
-![alt text](https://i.imgur.com/6sBRvjA.jpeg)
 
-#### Video:
-- Annotated with detected QR codes in a green rectangular frame with their IDs.
-![alt text](https://i.imgur.com/1MgWvRb.jpeg)
-![alt text](https://i.imgur.com/Ne8xM8T.jpeg)
-### Performance:
-The code is designed to run in real-time, processing each frame in less than 30 milliseconds on a standard computer.
+
 
 ## Contributors
 
