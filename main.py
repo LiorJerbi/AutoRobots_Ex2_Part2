@@ -232,7 +232,7 @@ def give_directions(csv_file, target_frame):
 
         # Check if ArUco marker is not detected and give instructions based on target frame
         if not aruco_detected and (last_direction is None or time.time() - last_print_time >= 5):
-            suggested_direction = "Rotate camera to the right."  # Initial suggestion
+            suggested_direction = "Turn right."  # Initial suggestion
             if last_direction != suggested_direction:
                 print(suggested_direction)
                 last_direction = suggested_direction
