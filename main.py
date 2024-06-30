@@ -157,7 +157,7 @@ def give_directions(csv_file, target_frame):
     target_roll = float(target_data['Roll'])
     target_distance = float(target_data['Distance'])  # Distance from the target frame
 
-    cap = cv2.VideoCapture(0)  # Use 0 for the default camera (adjust if needed)
+    cap = cv2.VideoCapture(1)  # Use 0 for the default camera or 1 for Iriun webcam turn your phone into webcam
     if not cap.isOpened():
         print("Error: Couldn't open live video.")
         return

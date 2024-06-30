@@ -4,6 +4,12 @@
 - In this part of the exercise we focus on live directions from pre annotated video we explain in the 1st part
 - This program input is a pre-recorded video of catching QR codes in a space, and it will provide navigation directions for a live video in the same space of the previous video. 
 
+## Setup for Using Iriun Webcam
+1. Download and install the Iriun app on your computer from [here](https://iriun.com).
+2. Download and install the Iriun app on your phone from the App Store or Google Play Store.
+3. Ensure that both your computer and phone are connected to the same WiFi network.
+4. Follow the instructions in the Iriun app to connect your phone's camera to your computer.
+
 ## Navigate Using Live Feed
 The script gives navigation directions based on a live video feed and the data from the CSV file.
 - When running the program it will run the 1st part on a given video, and then it will ask for a specific frame number that include QR code from the live video (exist in the outputted CSV file).
