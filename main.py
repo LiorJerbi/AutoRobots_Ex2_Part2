@@ -1,3 +1,5 @@
+import math
+from collections import deque
 import cv2
 import numpy as np
 import csv
@@ -7,11 +9,13 @@ import time
 last_instruction = None
 last_instruction_time = 0
 
-# Camera calibration parameters for the Tello camera
+# Camera calibration parameters
 camera_matrix = np.array([[920.8, 0, 620.5],
                           [0, 920.8, 360.5],
                           [0, 0, 1]])
 dist_coeffs = np.array([0.115, -0.108, 0, 0, 0])  # Example distortion coefficients
+aruco_marker_size = 0.05  # Actual size of the ArUco marker in meters
+
 
 def detect_aruco_markers(video_file):
     cap = cv2.VideoCapture(video_file)
@@ -19,8 +23,7 @@ def detect_aruco_markers(video_file):
         print("Error: Couldn't open video file")
         return None, None
 
-    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_1000)
-
+    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
     detected_markers = []
     aruco_count_per_frame = []
     frame_count = 0
@@ -40,7 +43,7 @@ def detect_aruco_markers(video_file):
                 marker_id = ids[i][0]
                 if marker_id not in detected_ids:
                     marker_corners = corners[i][0]
-                    distance = calculate_distance(marker_corners)
+                    distance = calculate_distance(marker_corners, camera_matrix)
                     yaw, pitch, roll = calculate_orientation(marker_corners, frame)
                     frame_markers.append((frame_count, marker_id, marker_corners, distance, yaw, pitch, roll))
 
@@ -53,14 +56,22 @@ def detect_aruco_markers(video_file):
         frame_count += 1
 
     cap.release()
-
     return detected_markers, aruco_count_per_frame
 
-def calculate_distance(corners):
-    # Estimate the distance based on the size of the detected QR code
-    side_length = np.linalg.norm(corners[0] - corners[1])
-    distance = 1 / side_length
+
+def calculate_distance(corners, camera_matrix):
+    # Calculate the distance based on the size of the detected ArUco marker
+    object_points = np.array([
+        [-aruco_marker_size / 2, aruco_marker_size / 2, 0],
+        [aruco_marker_size / 2, aruco_marker_size / 2, 0],
+        [aruco_marker_size / 2, -aruco_marker_size / 2, 0],
+        [-aruco_marker_size / 2, -aruco_marker_size / 2, 0]
+    ])
+
+    ret, rvec, tvec = cv2.solvePnP(object_points, corners, camera_matrix, dist_coeffs)
+    distance = np.linalg.norm(tvec)
     return distance
+
 
 def save_detection_status_csv(output_file, detected_markers):
     with open(output_file, 'w', newline='') as csvfile:
@@ -71,6 +82,7 @@ def save_detection_status_csv(output_file, detected_markers):
             for frame_number, marker_id, marker_corners, distance, yaw, pitch, roll in markers_in_frame:
                 frame_coordinates = ','.join([f'({x},{y})' for x, y in marker_corners])
                 writer.writerow([frame_number, marker_id, frame_coordinates, distance, yaw, pitch, roll])
+
 
 def read_csv(csv_file):
     data = []
@@ -87,6 +99,7 @@ def read_csv(csv_file):
             roll = float(row[6])
             data.append((frame_number, marker_id, coordinates, distance, yaw, pitch, roll))
     return data
+
 
 def annotate_video(video_file, output_video_file, detected_markers):
     cap = cv2.VideoCapture(video_file)
@@ -134,18 +147,6 @@ def give_directions(csv_file, target_frame):
                     return row
         return None
 
-    def get_next_frame_number(csv_file, current_frame_number):
-        with open(csv_file, newline='') as csvfile:
-            reader = csv.DictReader(csvfile)
-            found_current = False
-            for row in reader:
-                frame_num = int(row['Frame'])
-                if found_current:
-                    return frame_num
-                if frame_num == current_frame_number:
-                    found_current = True
-        return None
-
     target_data = find_target_data(csv_file, target_frame)
     if not target_data:
         print(f"Target frame {target_frame} not found in CSV file.")
@@ -157,21 +158,18 @@ def give_directions(csv_file, target_frame):
     target_roll = float(target_data['Roll'])
     target_distance = float(target_data['Distance'])  # Distance from the target frame
 
-    cap = cv2.VideoCapture(1)  # Use 0 for the default camera or 1 for Iriun webcam turn your phone into webcam
+    cap = cv2.VideoCapture(1)  # Use 1 for Iriun webcam, 0 for default camera
     if not cap.isOpened():
         print("Error: Couldn't open live video.")
         return
 
-    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_1000)
+    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
     aruco_params = cv2.aruco.DetectorParameters()
 
-    last_direction = None
-    last_marker_center = None
-    last_print_time = 0
+    last_directions = deque(maxlen=5)  # Adjust the length as needed for stabilization
+    current_direction = "Stay"
 
-    aruco_detected = False
-    found = False
-    while not found:
+    while True:
         ret, frame = cap.read()
         if not ret:
             break
@@ -179,70 +177,44 @@ def give_directions(csv_file, target_frame):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         corners, ids, _ = cv2.aruco.detectMarkers(gray, aruco_dict, parameters=aruco_params)
 
+        frame_center = (frame.shape[1] // 2, frame.shape[0] // 2)
+
         if ids is not None:
             for i in range(len(ids)):
                 marker_id = ids[i][0]
                 if marker_id == target_marker_id:
                     marker_corners = corners[i][0]
+                    marker_center = np.mean(marker_corners, axis=0)
                     current_yaw, current_pitch, current_roll = calculate_orientation(marker_corners, frame)
+                    current_distance = calculate_distance(marker_corners, camera_matrix)
+
                     yaw_diff = target_yaw - current_yaw
                     pitch_diff = target_pitch - current_pitch
+                    distance_diff = target_distance - current_distance
 
-                    direction = get_direction(yaw_diff, pitch_diff)
+                    direction_text = get_direction(yaw_diff, pitch_diff, distance_diff, marker_center, frame_center)
 
-                    marker_center = np.mean(marker_corners, axis=0)
-                    if direction != last_direction or last_marker_center is None or np.linalg.norm(
-                            marker_center - last_marker_center) > 10:
-                        print(direction)
-                        last_direction = direction
-                        last_marker_center = marker_center
-                        last_print_time = time.time()  # Update last print time
-                        if direction == "Hold position":
-                            print("Aruco Marker Detected!")
-                            while True:
-                                ret, frame = cap.read()
-                                if not ret:
-                                    break
+                    # Add the new direction to the queue
+                    last_directions.append(direction_text)
 
-                                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                                corners, ids, _ = cv2.aruco.detectMarkers(gray, aruco_dict, parameters=aruco_params)
+                    # Update the current direction if it's consistent over the last few frames
+                    if len(last_directions) == last_directions.maxlen and all(
+                            d == last_directions[0] for d in last_directions):
+                        current_direction = last_directions[0]
 
-                                if ids is not None:
-                                    for i in range(len(ids)):
-                                        marker_id = ids[i][0]
-                                        if marker_id == target_marker_id:
-                                            marker_corners = corners[i][0]
-                                            current_distance = calculate_distance(marker_corners)
-                                            # print('current distance:' + str(current_distance))
-                                            # print("target distance:" + str(target_distance))
-                                            if np.isclose(current_distance, target_distance, atol=0.01):
-                                                aruco_detected = True
-                                                found = True
-                                                break
-                                            elif current_distance > target_distance:
-                                                print("Move forward.")
-                                                # Adjust camera position (move forward)
-                                            else:
-                                                print("Move backward.")
-                                                # Adjust camera position (move backward)
-                                            time.sleep(3)  # Adjust sleep time as needed
-                                    if found:
-                                        break
-                        break  # Exit the loop once direction is printed for the current frame
+                    break
+        else:
+            distance_diff = None  # Set distance_diff to None when no marker is detected
 
-        # Check if ArUco marker is not detected and give instructions based on target frame
-        if not aruco_detected and (last_direction is None or time.time() - last_print_time >= 5):
-            suggested_direction = "Turn right."  # Initial suggestion
-            if last_direction != suggested_direction:
-                print(suggested_direction)
-                last_direction = suggested_direction
-                last_print_time = time.time()  # Update last print time
+        # Display distance difference instead of current distance
+        distance_text = f"Distance Diff: {distance_diff:.2f} m" if isinstance(distance_diff,
+                                                                              float) else "Distance Diff: NaN"
+        cv2.putText(frame, distance_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
-        # Interval printing logic
-        if time.time() - last_print_time >= 5:
-            if not aruco_detected:
-                print(last_direction if last_direction else "Hold position.")
-            last_print_time = time.time()
+        # Display direction instructions
+        cv2.putText(frame, current_direction, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+
+        cv2.imshow("Live Directions", frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -250,71 +222,95 @@ def give_directions(csv_file, target_frame):
     cap.release()
     cv2.destroyAllWindows()
 
-    if found:
-        next_frame_number = get_next_frame_number(csv_file, target_frame)
-        if next_frame_number is not None:
-            print(f"Moving to next frame: {next_frame_number}")
-            give_directions(csv_file, next_frame_number)
 
-def get_direction(yaw_diff, pitch_diff):
-    yaw_threshold = 5
-    pitch_threshold = 5
+def get_direction(yaw_diff, pitch_diff, distance_diff, marker_center, frame_center):
+    yaw_threshold = 5  # Adjust as needed based on your setup
+    pitch_threshold = 5  # Adjust as needed based on your setup
+    distance_threshold = 0.2  # Adjust as needed based on your setup
+
+    yaw_direction = ""
+    pitch_direction = ""
+    distance_direction = ""
+    move_direction = ""
 
     if abs(yaw_diff) > yaw_threshold:
         if yaw_diff > 0:
-            return "Turn left."
+            yaw_direction = "turn left"
         else:
-            return "Turn right."
-    elif abs(pitch_diff) > pitch_threshold:
+            yaw_direction = "turn right"
+
+    if abs(pitch_diff) > pitch_threshold:
         if pitch_diff < 0:
-            return "Tilt up."
+            pitch_direction = "tilt down"
         else:
-            return "Tilt down."
-    else:
-        return "Hold position"
+            pitch_direction = "tilt up"
+
+    if distance_diff is not None and abs(distance_diff) > distance_threshold:
+        if distance_diff < 0:
+            distance_direction = "move forward"
+        else:
+            distance_direction = "move backward"
+
+    # Determine move right/left based on marker position in frame
+    if marker_center[0] < frame_center[0] - 20:  # Adjust threshold as needed
+        move_direction = "move left"
+    elif marker_center[0] > frame_center[0] + 20:  # Adjust threshold as needed
+        move_direction = "move right"
+
+    instructions = f"{move_direction} {yaw_direction} {pitch_direction} {distance_direction}".strip()
+
+    return instructions if instructions else "Stay"
+
 
 def calculate_orientation(corners, frame):
-    vector1 = corners[1] - corners[0]
-    vector2 = corners[3] - corners[0]
+    dist_coeffs = np.zeros((4, 1))  # Assuming no lens distortion
 
-    roll = np.degrees(np.arctan2(vector1[1], vector1[0]))
+    # SolvePnP to get the rotation and translation vectors
+    object_points = np.array([
+        [-0.5, -0.5, 0],  # Bottom-left
+        [0.5, -0.5, 0],  # Bottom-right
+        [0.5, 0.5, 0],  # Top-right
+        [-0.5, 0.5, 0]  # Top-left
+    ], dtype=float)
 
-    center = np.mean(corners, axis=0)
-    delta_x = center[0] - frame.shape[1] / 2
-    delta_y = center[1] - frame.shape[0] / 2
+    # Convert corners to the appropriate format
+    image_points = np.array(corners, dtype=float)
 
-    yaw = np.degrees(np.arctan2(delta_x, frame.shape[1]))
-    pitch = -np.degrees(np.arctan2(delta_y, frame.shape[0]))
+    success, rvec, tvec = cv2.solvePnP(object_points, image_points, camera_matrix, dist_coeffs)
+    if not success:
+        return 0.0, 0.0, 0.0
+
+    # Convert rotation vector to rotation matrix
+    rotation_matrix, _ = cv2.Rodrigues(rvec)
+    roll, pitch, yaw = rotationMatrixToEulerAngles(rotation_matrix)
 
     return yaw, pitch, roll
 
-def main():
-    video_file = 'target_vid2.mp4'
-    output_file = 'detection_status.csv'
-    output_video_file = 'output.mp4'
 
-    # Detect ArUco markers
-    detected_markers, _ = detect_aruco_markers(video_file)
+def rotationMatrixToEulerAngles(R):
+    sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
 
-    if detected_markers:
-        # Save detection status
-        save_detection_status_csv(output_file, detected_markers)
+    singular = sy < 1e-6
 
-        # Annotate video with detected ArUco markers
-        annotate_video(video_file, output_video_file, detected_markers)
-
-        print("Detection status saved to", output_file)
-        print("Annotated video saved to", output_video_file)
+    if not singular:
+        x = math.atan2(R[2, 1], R[2, 2])
+        y = math.atan2(-R[2, 0], sy)
+        z = math.atan2(R[1, 0], R[0, 0])
     else:
-        print("No ArUco markers detected in the video")
+        x = math.atan2(-R[1, 2], R[1, 1])
+        y = math.atan2(-R[2, 0], sy)
+        z = 0
 
-    target_frame = ''
-    # Give directions based on the current live video frame and the target frame
-    while target_frame != 'q':
-        target_frame = input("Enter target frame number or press q to exit: ")
-        if target_frame != 'q':
-            target_frame = int(target_frame)
-            give_directions(output_file, target_frame)
+    return np.degrees(x), np.degrees(y), np.degrees(z)
 
-if __name__ == "__main__":
-    main()
+
+video_file = "IMG_5567.mp4"
+output_csv_file = "detection_status.csv"
+output_video_file = "annotated_video.mp4"
+
+detected_markers, aruco_count_per_frame = detect_aruco_markers(video_file)
+save_detection_status_csv(output_csv_file, detected_markers)
+annotate_video(video_file, output_video_file, detected_markers)
+
+target_frame = int(input("Enter the target frame number you want to compare to: "))
+give_directions(output_csv_file, target_frame)
